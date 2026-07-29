@@ -1119,6 +1119,44 @@ resource "azurerm_private_dns_zone_virtual_network_link" "app_deployment" {
   tags = local.tags
 }
 
+############################################################
+# NSG. Deployment Agent Access to Private Endpoints
+############################################################
+
+# Allows the future deployment VM to connect to Azure SQL through its
+# private endpoint for database initialization and migrations.
+resource "azurerm_network_security_rule" "allow_deployment_agent_to_sql" {
+  name                        = "allow-deployment-agent-to-sql"
+  priority                    = 130
+  direction                   = "Inbound"
+  access                      = "Allow"
+  protocol                    = "Tcp"
+  source_port_range           = "*"
+  destination_port_range      = "1433"
+  source_address_prefix       = "10.30.1.0/24"
+  destination_address_prefix  = "10.20.2.0/27"
+  resource_group_name         = azurerm_resource_group.rg.name
+  network_security_group_name = azurerm_network_security_group.private_endpoints.name
+  description                 = "Allows the deployment subnet to reach Azure SQL through private endpoints."
+}
+
+# Allows the future deployment VM to reach HTTPS-based private services:
+# Key Vault, Blob Storage, App Service, and the future App Service SCM endpoint.
+resource "azurerm_network_security_rule" "allow_deployment_agent_to_private_https" {
+  name                        = "allow-deployment-agent-to-private-https"
+  priority                    = 140
+  direction                   = "Inbound"
+  access                      = "Allow"
+  protocol                    = "Tcp"
+  source_port_range           = "*"
+  destination_port_range      = "443"
+  source_address_prefix       = "10.30.1.0/24"
+  destination_address_prefix  = "10.20.2.0/27"
+  resource_group_name         = azurerm_resource_group.rg.name
+  network_security_group_name = azurerm_network_security_group.private_endpoints.name
+
+  description = "Allows the deployment subnet to reach HTTPS private endpoints."
+}
 
 ############################################################
 # Outputs
