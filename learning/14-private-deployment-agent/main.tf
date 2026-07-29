@@ -1181,6 +1181,24 @@ resource "azurerm_public_ip" "bastion" {
   tags = local.tags
 }
 
+resource "azurerm_bastion_host" "bastion" {
+  name                = "bastion-dev-helloworld"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+
+  # Basic is enough for browser-based SSH to the deployment VM.
+  sku   = "Basic"
+
+  # Connects Bastion's public entry point to its private subnet inside the VNet.
+  ip_configuration {
+    name                 = "configuration"
+    subnet_id            = azurerm_subnet.deployment_bastion.id
+    public_ip_address_id = azurerm_public_ip.bastion.id
+  }
+
+  tags = local.tags
+}
+
 ############################################################
 # Outputs
 ############################################################
