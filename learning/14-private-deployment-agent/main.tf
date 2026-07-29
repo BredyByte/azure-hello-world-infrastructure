@@ -59,6 +59,9 @@ locals {
   deployment_vnet_name          = "vnet-dev-helloworld-deployment"
   deployment_vnet_address_space = ["10.30.0.0/16"]
 
+  deployment_bastion_subnet_name     = "AzureBastionSubnet"
+  deployment_bastion_subnet_prefixes = ["10.30.0.0/26"]
+
   deployment_agent_subnet_name     = "snet-deployment-agent"
   deployment_agent_subnet_prefixes = ["10.30.1.0/24"]
 
@@ -1037,6 +1040,13 @@ resource "azurerm_subnet" "deployment_agent" {
   resource_group_name  = azurerm_resource_group.rg.name
   virtual_network_name = azurerm_virtual_network.deployment.name
   address_prefixes     = local.deployment_agent_subnet_prefixes
+}
+
+resource "azurerm_subnet" "deployment_bastion" {
+  name                 = local.deployment_bastion_subnet_name
+  resource_group_name  = azurerm_resource_group.rg.name
+  virtual_network_name = azurerm_virtual_network.deployment.name
+  address_prefixes     = local.deployment_bastion_subnet_prefixes
 }
 
 ############################################################
