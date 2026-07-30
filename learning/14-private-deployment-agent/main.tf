@@ -90,6 +90,11 @@ locals {
   tls_certificate_name         = "tls-iloveyourmama-com"
   gateway_ssl_certificate_name = "ssl-iloveyourmama-com"
 
+  deployment_agent_vm_name             = "vm-deployment-agent"
+  deployment_agent_vm_size             = "Standard_D2als_v7"
+  deployment_agent_admin_username      = "azureuser"
+  deployment_agent_ssh_public_key_path = "~/.ssh/ssh-azure-helloworld-deployment-agent.pub"
+
   secrets = {
     welcome-message = "Welcome David from Azure Key Vault!"
   }
@@ -1218,7 +1223,7 @@ resource "azurerm_bastion_host" "bastion" {
   resource_group_name = azurerm_resource_group.rg.name
 
   # Basic is enough for browser-based SSH to the deployment VM.
-  sku   = "Basic"
+  sku = "Basic"
 
   # Connects Bastion's public entry point to its private subnet inside the VNet.
   ip_configuration {
@@ -1272,6 +1277,67 @@ resource "azurerm_subnet_nat_gateway_association" "deployment_agent" {
 }
 
 ############################################################
+# Private Deployment Agent VM
+############################################################
+
+# Creates a private network interface in the deployment-agent subnet.
+# No public IP is attached: SSH access will use Azure Bastion.
+resource "azurerm_network_interface" "deployment_agent" {
+  name                = "nic-deployment-agent"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+
+  accelerated_networking_enabled = true
+
+  ip_configuration {
+    name                          = "ipconfig-deployment-agent"
+    subnet_id                     = azurerm_subnet.deployment_agent.id
+    private_ip_address_allocation = "Dynamic"
+  }
+
+  tags = local.tags
+}
+
+# Private Linux VM that will run the Azure DevOps self-hosted agent.
+resource "azurerm_linux_virtual_machine" "deployment_agent" {
+  name                = local.deployment_agent_vm_name
+  resource_group_name = azurerm_resource_group.rg.name
+  location            = azurerm_resource_group.rg.location
+  size                = local.deployment_agent_vm_size
+
+  network_interface_ids = [
+    azurerm_network_interface.deployment_agent.id,
+  ]
+
+  admin_username                  = local.deployment_agent_admin_username
+  disable_password_authentication = true
+
+  # Terraform reads only the public half of your local SSH key pair.
+  # The private key always remains on your laptop.
+  admin_ssh_key {
+    username   = local.deployment_agent_admin_username
+    public_key = file(pathexpand(local.deployment_agent_ssh_public_key_path))
+  }
+
+  os_disk {
+    caching              = "ReadWrite"
+    storage_account_type = "StandardSSD_LRS"
+  }
+
+  source_image_reference {
+    publisher = "Canonical"
+    offer     = "ubuntu-24_04-lts"
+    sku       = "server"
+    version   = "latest"
+  }
+
+  boot_diagnostics {}
+
+  tags = local.tags
+}
+
+
+############################################################
 # Outputs
 ############################################################
 
@@ -1317,4 +1383,8 @@ output "key_vault_uri" {
 
 output "key_vault_secrets" {
   value = keys(local.secrets)
+}
+
+output "deployment_agent_private_ip" {
+  value = azurerm_network_interface.deployment_agent.private_ip_address
 }
