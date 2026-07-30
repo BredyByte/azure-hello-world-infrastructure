@@ -193,6 +193,14 @@ resource "azurerm_network_security_group" "private_endpoints" {
   tags = local.tags
 }
 
+resource "azurerm_network_security_group" "deployment_agent" {
+  name                = "nsg-deployment-agent"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+
+  tags = local.tags
+}
+
 # Allows the App Service integration subnet to reach Azure SQL privately.
 resource "azurerm_network_security_rule" "allow_app_service_to_sql" {
   name                        = "allow-app-service-to-sql"
@@ -1166,6 +1174,29 @@ resource "azurerm_network_security_rule" "allow_deployment_agent_to_private_http
   network_security_group_name = azurerm_network_security_group.private_endpoints.name
 
   description = "Allows the deployment subnet to reach HTTPS private endpoints."
+}
+
+# Allows Azure Bastion to connect to the private deployment VM through SSH.
+resource "azurerm_network_security_rule" "allow_bastion_to_deployment_vm_ssh" {
+  name                        = "allow-bastion-to-deployment-vm-ssh"
+  priority                    = 100
+  direction                   = "Inbound"
+  access                      = "Allow"
+  protocol                    = "Tcp"
+  source_port_range           = "*"
+  destination_port_range      = "22"
+  source_address_prefix       = "10.30.0.0/26"
+  destination_address_prefix  = "10.30.1.0/24"
+  resource_group_name         = azurerm_resource_group.rg.name
+  network_security_group_name = azurerm_network_security_group.deployment_agent.name
+
+  description = "Allows Azure Bastion to connect to the deployment VM through SSH."
+}
+
+# Applies the NSG to every resource in the deployment-agent subnet.
+resource "azurerm_subnet_network_security_group_association" "deployment_agent" {
+  subnet_id                 = azurerm_subnet.deployment_agent.id
+  network_security_group_id = azurerm_network_security_group.deployment_agent.id
 }
 
 # Public entry point for Azure Bastion.
