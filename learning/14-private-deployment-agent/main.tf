@@ -1200,6 +1200,47 @@ resource "azurerm_bastion_host" "bastion" {
 }
 
 ############################################################
+# NAT Gateway
+############################################################
+
+# Static public outbound IP used by the NAT Gateway.
+# It does not expose the deployment VM to inbound internet traffic.
+resource "azurerm_public_ip" "nat_gateway" {
+  name                = "pip-nat-deployment-dev-helloworld"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+
+  allocation_method = "Static"
+  sku               = "StandardV2"
+
+  tags = local.tags
+}
+
+# Provides controlled outbound internet access for the deployment-agent subnet.
+resource "azurerm_nat_gateway" "nat_deployment_dev_helloworld" {
+  name                = "nat-deployment-dev-helloworld"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+
+  sku_name                = "StandardV2"
+  idle_timeout_in_minutes = 4
+
+  tags = local.tags
+}
+
+# Assigns the NAT Gateway's public outbound IP.
+resource "azurerm_nat_gateway_public_ip_association" "deployment" {
+  nat_gateway_id       = azurerm_nat_gateway.nat_deployment_dev_helloworld.id
+  public_ip_address_id = azurerm_public_ip.nat_gateway.id
+}
+
+# Sends outbound traffic from the future deployment VM subnet through NAT.
+resource "azurerm_subnet_nat_gateway_association" "deployment_agent" {
+  subnet_id      = azurerm_subnet.deployment_agent.id
+  nat_gateway_id = azurerm_nat_gateway.nat_deployment_dev_helloworld.id
+}
+
+############################################################
 # Outputs
 ############################################################
 
