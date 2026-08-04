@@ -36,12 +36,12 @@ data "azurerm_client_config" "current" {}
 
 locals {
   location            = "France Central"
-  resource_group_name = "rg-dev-helloworld"
+  resource_group_name = "rg-dev-helloworld-f800"
 
-  app_service_plan = "asp-dev-helloworld"
-  web_app          = "app-dev-helloworld"
+  app_service_plan = "asp-dev-helloworld-f800"
+  web_app          = "app-dev-helloworld-f800"
 
-  storage_account = "stdevhelloworld"
+  storage_account = "stdevhelloworldf800"
   storage_containers = toset([
     "images",
     "data",
@@ -49,11 +49,11 @@ locals {
   ])
 
   sql_server_location                 = "France Central"
-  sql_server                          = "sql-dev-helloworld"
-  sql_database                        = "sqldb-dev-helloworld"
-  sql_entra_admin_user_principal_name = "correodemimobil_gmail.com#EXT#@correodemimobilgmail.onmicrosoft.com"
+  sql_server                          = "sql-dev-helloworld-f800"
+  sql_database                        = "sqldb-dev-helloworld-f800"
+  sql_entra_admin_user_principal_name = "bredykhindavyd_gmail.com#EXT#@bredykhindavydgmail.onmicrosoft.com"
 
-  key_vault              = "kv-dev-helloworld"
+  key_vault              = "kv-dev-helloworld-f800"
   current_user_object_id = data.azurerm_client_config.current.object_id
 
   deployment_vnet_name          = "vnet-dev-helloworld-deployment"
