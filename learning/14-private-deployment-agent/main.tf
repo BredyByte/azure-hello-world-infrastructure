@@ -774,6 +774,10 @@ resource "azurerm_application_gateway" "app_gateway" {
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
 
+  depends_on = [
+    azurerm_network_security_rule.allow_gateway_manager,
+  ]
+
   # Uses the user-assigned identity to authenticate to Key Vault.
   identity {
     type         = "UserAssigned"
