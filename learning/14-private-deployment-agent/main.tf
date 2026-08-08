@@ -1337,7 +1337,45 @@ resource "azurerm_linux_virtual_machine" "deployment_agent" {
 
   boot_diagnostics {}
 
+  # Gives this private deployment VM its own Microsoft Entra identity.
+  # Deployment scripts use this identity instead of Azure passwords.
+  identity {
+    type = "SystemAssigned"
+  }
+
   tags = local.tags
+}
+
+############################################################
+# Deployment VM permissions
+############################################################
+
+# Allows deployment scripts to upload and update Blob Storage content.
+resource "azurerm_role_assignment" "deployment_agent_storage_blob_data_contributor" {
+  scope                = azurerm_storage_account.storage.id
+  role_definition_name = "Storage Blob Data Contributor"
+  principal_id         = azurerm_linux_virtual_machine.deployment_agent.identity[0].principal_id
+}
+
+# Allows deployment scripts to create and update application secrets.
+resource "azurerm_role_assignment" "deployment_agent_key_vault_secrets_officer" {
+  scope                = azurerm_key_vault.kv.id
+  role_definition_name = "Key Vault Secrets Officer"
+  principal_id         = azurerm_linux_virtual_machine.deployment_agent.identity[0].principal_id
+}
+
+# Allows deployment scripts to import and renew TLS certificates in Key Vault.
+resource "azurerm_role_assignment" "deployment_agent_key_vault_certificates_officer" {
+  scope                = azurerm_key_vault.kv.id
+  role_definition_name = "Key Vault Certificates Officer"
+  principal_id         = azurerm_linux_virtual_machine.deployment_agent.identity[0].principal_id
+}
+
+# Allows deployment scripts to deploy and configure this specific web app.
+resource "azurerm_role_assignment" "deployment_agent_website_contributor" {
+  scope                = azurerm_linux_web_app.app.id
+  role_definition_name = "Website Contributor"
+  principal_id         = azurerm_linux_virtual_machine.deployment_agent.identity[0].principal_id
 }
 
 
@@ -1391,4 +1429,8 @@ output "key_vault_secrets" {
 
 output "deployment_agent_private_ip" {
   value = azurerm_network_interface.deployment_agent.private_ip_address
+}
+
+output "deployment_agent_principal_id" {
+  value = azurerm_linux_virtual_machine.deployment_agent.identity[0].principal_id
 }
