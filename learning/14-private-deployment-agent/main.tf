@@ -512,6 +512,20 @@ data "azuread_user" "sql_admin" {
   user_principal_name = local.sql_entra_admin_user_principal_name
 }
 
+# SQL administrator group.
+# Both the human administrator and deployment VM will be members.
+resource "azuread_group" "sql_administrators" {
+  display_name     = "grp-dev-helloworld-sql-administrators"
+  security_enabled = true
+  mail_enabled     = false
+}
+
+# Keeps your Entra user able to administer this SQL Server.
+resource "azuread_group_member" "sql_human_administrator" {
+  group_object_id  = azuread_group.sql_administrators.object_id
+  member_object_id = data.azuread_user.sql_admin.object_id
+}
+
 resource "azurerm_mssql_server" "sql" {
   name                = local.sql_server
   resource_group_name = azurerm_resource_group.rg.name
@@ -522,13 +536,18 @@ resource "azurerm_mssql_server" "sql" {
   minimum_tls_version           = "1.2"
   public_network_access_enabled = false
 
-  # This administrator can create Microsoft Entra users inside the database.
+  # The SQL administrator is now an Entra group.
   azuread_administrator {
-    login_username              = data.azuread_user.sql_admin.user_principal_name
-    object_id                   = data.azuread_user.sql_admin.object_id
+    login_username              = azuread_group.sql_administrators.display_name
+    object_id                   = azuread_group.sql_administrators.object_id
     tenant_id                   = data.azurerm_client_config.current.tenant_id
     azuread_authentication_only = true
   }
+
+  # Ensure you are a group member before Azure assigns it as SQL admin.
+  depends_on = [
+    azuread_group_member.sql_human_administrator,
+  ]
 
   tags = local.tags
 }
@@ -1366,6 +1385,13 @@ resource "azurerm_linux_virtual_machine" "deployment_agent" {
 ############################################################
 # Deployment VM permissions
 ############################################################
+
+# Makes the deployment VM's managed identity a SQL administrator.
+# This lets its deployment scripts provision tables and application data.
+resource "azuread_group_member" "sql_deployment_agent_administrator" {
+  group_object_id  = azuread_group.sql_administrators.object_id
+  member_object_id = azurerm_linux_virtual_machine.deployment_agent.identity[0].principal_id
+}
 
 # Allows deployment scripts to upload and update Blob Storage content.
 resource "azurerm_role_assignment" "deployment_agent_storage_blob_data_contributor" {
