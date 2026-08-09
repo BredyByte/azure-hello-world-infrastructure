@@ -1078,10 +1078,19 @@ resource "azurerm_virtual_network_peering" "deployment_to_application" {
   virtual_network_name      = azurerm_virtual_network.deployment.name
   remote_virtual_network_id = azurerm_virtual_network.vnet.id
 
+  depends_on = [
+    azurerm_subnet.app_gateway,
+    azurerm_subnet.app_service_integration,
+    azurerm_subnet.private_endpoints,
+    azurerm_subnet.deployment_agent,
+    azurerm_subnet.deployment_bastion,
+  ]
+
   allow_virtual_network_access = true
   allow_forwarded_traffic      = false
   allow_gateway_transit        = false
   use_remote_gateways          = false
+
 }
 
 # Allows reply traffic and private routes from the application VNet back to
@@ -1091,6 +1100,14 @@ resource "azurerm_virtual_network_peering" "application_to_deployment" {
   resource_group_name       = azurerm_resource_group.rg.name
   virtual_network_name      = azurerm_virtual_network.vnet.name
   remote_virtual_network_id = azurerm_virtual_network.deployment.id
+
+  depends_on = [
+    azurerm_subnet.app_gateway,
+    azurerm_subnet.app_service_integration,
+    azurerm_subnet.private_endpoints,
+    azurerm_subnet.deployment_agent,
+    azurerm_subnet.deployment_bastion,
+  ]
 
   allow_virtual_network_access = true
   allow_forwarded_traffic      = false
