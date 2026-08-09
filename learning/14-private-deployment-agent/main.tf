@@ -451,6 +451,9 @@ resource "azurerm_linux_web_app" "app" {
     AZURE_STORAGE_ACCOUNT_NAME = azurerm_storage_account.storage.name
     SQL_SERVER                 = azurerm_mssql_server.sql.fully_qualified_domain_name
     SQL_DATABASE               = azurerm_mssql_database.database.name
+
+    # Makes Kudu install Python dependencies from requirements.txt during ZIP deployment.
+    SCM_DO_BUILD_DURING_DEPLOYMENT = "true"
   }
 
   site_config {
