@@ -552,7 +552,20 @@ resource "azurerm_mssql_server" "sql" {
     azuread_group_member.sql_human_administrator,
   ]
 
+  identity {
+    type = "SystemAssigned"
+  }
+
   tags = local.tags
+}
+
+resource "azuread_directory_role" "directory_readers" {
+  display_name = "Directory Readers"
+}
+
+resource "azuread_directory_role_assignment" "sql_directory_readers" {
+  role_id             = azuread_directory_role.directory_readers.object_id
+  principal_object_id = azurerm_mssql_server.sql.identity[0].principal_id
 }
 
 ############################################################
