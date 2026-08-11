@@ -53,8 +53,7 @@ locals {
   sql_database                        = "sqldb-dev-helloworld-f800"
   sql_entra_admin_user_principal_name = "bredykhindavyd_gmail.com#EXT#@bredykhindavydgmail.onmicrosoft.com"
 
-  key_vault              = "kv-dev-helloworld-f800"
-  current_user_object_id = data.azurerm_client_config.current.object_id
+  key_vault = "kv-dev-helloworld-f800"
 
   deployment_vnet_name          = "vnet-dev-helloworld-deployment"
   deployment_vnet_address_space = ["10.30.0.0/16"]
@@ -82,22 +81,10 @@ locals {
   private_dns_zone_storage   = "privatelink.blob.core.windows.net"
   private_dns_zone_app       = "privatelink.azurewebsites.net"
 
-  # Public hostname resolved by Cloudflare DNS to the Application Gateway IP.
-  public_domain_name = "iloveyourmama.com"
-
-  # The PFX is imported manually (or later by a pipeline) into Key Vault.
-  # Only its versionless secret URI is referenced by Terraform.
-  tls_certificate_name         = "tls-iloveyourmama-com"
-  gateway_ssl_certificate_name = "ssl-iloveyourmama-com"
-
   deployment_agent_vm_name             = "vm-deployment-agent"
   deployment_agent_vm_size             = "Standard_D2als_v7"
   deployment_agent_admin_username      = "azureuser"
   deployment_agent_ssh_public_key_path = "~/.ssh/ssh-azure-helloworld-deployment-agent.pub"
-
-  secrets = {
-    welcome-message = "Welcome David from Azure Key Vault!"
-  }
 
   tags = {
     Environment = "Development"
@@ -305,22 +292,6 @@ resource "azurerm_network_security_rule" "allow_http_from_internet" {
   description                 = "Allows HTTP traffic from the Internet to Application Gateway."
 }
 
-# Reserved now for the future HTTPS listener.
-resource "azurerm_network_security_rule" "allow_https_from_internet" {
-  name                        = "allow-https-from-internet"
-  priority                    = 110
-  direction                   = "Inbound"
-  access                      = "Allow"
-  protocol                    = "Tcp"
-  source_port_range           = "*"
-  destination_port_range      = "443"
-  source_address_prefix       = "Internet"
-  destination_address_prefix  = "10.20.0.0/24"
-  resource_group_name         = azurerm_resource_group.rg.name
-  network_security_group_name = azurerm_network_security_group.app_gateway.name
-  description                 = "Allows HTTPS traffic from the Internet to Application Gateway."
-}
-
 # Required by the Application Gateway v2 control plane.
 # The destination must be Any: GatewayManager is not client traffic to the subnet.
 resource "azurerm_network_security_rule" "allow_gateway_manager" {
@@ -418,11 +389,6 @@ resource "azurerm_service_plan" "plan" {
   os_type  = "Linux"
   sku_name = "B1"
 
-  # Production
-  # app_service_plan_sku   = "P1v3"
-  # worker_count           = 3
-  # zone_balancing_enabled = true
-
   tags = local.tags
 }
 
@@ -437,6 +403,10 @@ resource "azurerm_linux_web_app" "app" {
   service_plan_id     = azurerm_service_plan.plan.id
 
   https_only = true
+
+  # Blocks direct public access. App Gateway and the deployment VM use the
+  # App Service private endpoint instead.
+  public_network_access_enabled = false
 
   # Sends the App Service's private outbound traffic through the delegated subnet.
   virtual_network_subnet_id = azurerm_subnet.app_service_integration.id
@@ -606,38 +576,12 @@ resource "azurerm_key_vault" "kv" {
   tags = local.tags
 }
 
-# Temporarily disabled because Terraform is running outside the VNet and
-# cannot reach the private Key Vault to create or delete secrets.
-# (RBAC) Assign role to user(me)
-# resource "azurerm_role_assignment" "current_user_kv_admin" {
-#   scope                = azurerm_key_vault.kv.id
-#   role_definition_name = "Key Vault Administrator"
-#   principal_id         = local.current_user_object_id
-# }
-
 # (RBAC) Allows the web app's managed identity to read values from Key Vault.
 resource "azurerm_role_assignment" "app_key_vault_secrets_user" {
   scope                = azurerm_key_vault.kv.id
   role_definition_name = "Key Vault Secrets User"
   principal_id         = azurerm_linux_web_app.app.identity[0].principal_id
 }
-
-# Temporarily disabled because Terraform is running outside the VNet and
-# cannot reach the private Key Vault to create or delete secrets.
-# Key Vault secrets creation
-# resource "azurerm_key_vault_secret" "this" {
-
-#   depends_on = [
-#     azurerm_role_assignment.current_user_kv_admin
-#   ]
-
-#   for_each = local.secrets
-
-#   name  = each.key
-#   value = each.value
-
-#   key_vault_id = azurerm_key_vault.kv.id
-# }
 
 ############################################################
 # Private Endpoints
@@ -741,26 +685,6 @@ resource "azurerm_private_endpoint" "app" {
 # Application Gateway and Web Application Firewall
 ############################################################
 
-# A standalone identity is required for Application Gateway to retrieve the
-# Key Vault certificate used by its HTTPS listener.
-resource "azurerm_user_assigned_identity" "app_gateway_key_vault" {
-  name                = "id-appgw-keyvault"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
-
-  # This identity can only be assigned to resources in France Central.
-  isolation_scope = "Regional"
-
-  tags = local.tags
-}
-
-# Allows only this Gateway identity to read the certificate's backing secret.
-resource "azurerm_role_assignment" "app_gateway_key_vault_secrets_user" {
-  scope                = azurerm_key_vault.kv.id
-  role_definition_name = "Key Vault Secrets User"
-  principal_id         = azurerm_user_assigned_identity.app_gateway_key_vault.principal_id
-}
-
 # The only public entry point for the application architecture.
 resource "azurerm_public_ip" "app_gateway" {
   name                = "pip-appgw-dev-helloworld"
@@ -812,12 +736,6 @@ resource "azurerm_application_gateway" "app_gateway" {
   depends_on = [
     azurerm_network_security_rule.allow_gateway_manager,
   ]
-
-  # Uses the user-assigned identity to authenticate to Key Vault.
-  identity {
-    type         = "UserAssigned"
-    identity_ids = [azurerm_user_assigned_identity.app_gateway_key_vault.id]
-  }
 
   http2_enabled      = true
   firewall_policy_id = azurerm_web_application_firewall_policy.app_gateway.id
@@ -900,146 +818,6 @@ resource "azurerm_application_gateway" "app_gateway" {
 
   tags = local.tags
 }
-
-# HTTPS
-# resource "azurerm_application_gateway" "app_gateway" {
-#   name                = "agw-dev-helloworld"
-#   location            = azurerm_resource_group.rg.location
-#   resource_group_name = azurerm_resource_group.rg.name
-
-#   # Uses the user-assigned identity to authenticate to Key Vault.
-#   identity {
-#     type         = "UserAssigned"
-#     identity_ids = [azurerm_user_assigned_identity.app_gateway_key_vault.id]
-#   }
-
-#   # The Key Vault certificate must exist before this HTTPS configuration is applied.
-#   depends_on = [
-#     azurerm_role_assignment.app_gateway_key_vault_secrets_user,
-#   ]
-
-#   http2_enabled      = true
-#   firewall_policy_id = azurerm_web_application_firewall_policy.app_gateway.id
-#   zones              = ["1", "2", "3"]
-
-#   sku {
-#     name = "WAF_v2"
-#     tier = "WAF_v2"
-#   }
-
-#   autoscale_configuration {
-#     min_capacity = 1
-#     max_capacity = 2
-#   }
-
-#   gateway_ip_configuration {
-#     name      = "appGatewayIpConfig"
-#     subnet_id = azurerm_subnet.app_gateway.id
-#   }
-
-#   frontend_port {
-#     name = "port_80"
-#     port = 80
-#   }
-
-#   frontend_port {
-#     name = "port_443"
-#     port = 443
-#   }
-
-#   frontend_ip_configuration {
-#     name                 = "appGwPublicFrontendIpIPv4"
-#     public_ip_address_id = azurerm_public_ip.app_gateway.id
-#   }
-
-#   # This is a Key Vault reference, not the PFX content. The versionless URI
-#   # lets Application Gateway detect future certificate versions automatically.
-#   ssl_certificate {
-#     name                = local.gateway_ssl_certificate_name
-#     key_vault_secret_id = "https://${local.key_vault}.vault.azure.net/secrets/${local.tls_certificate_name}"
-#   }
-
-#   # Keep the normal App Service hostname. Private DNS resolves it to the
-#   # private endpoint IP from inside this VNet.
-#   backend_address_pool {
-#     name  = "pool-app-service"
-#     fqdns = [azurerm_linux_web_app.app.default_hostname]
-#   }
-
-#   backend_http_settings {
-#     name                  = "bhs-app-service-https"
-#     cookie_based_affinity = "Disabled"
-#     port                  = 443
-#     protocol              = "Https"
-#     request_timeout       = 30
-#     host_name             = azurerm_linux_web_app.app.default_hostname
-#     probe_name            = "probe-app-service"
-#   }
-
-#   # Azure checks this endpoint before sending users' requests to the backend.
-#   probe {
-#     name                                      = "probe-app-service"
-#     protocol                                  = "Https"
-#     host                                      = azurerm_linux_web_app.app.default_hostname
-#     path                                      = "/"
-#     interval                                  = 30
-#     timeout                                   = 30
-#     unhealthy_threshold                       = 3
-#     minimum_servers                           = 0
-#     pick_host_name_from_backend_http_settings = false
-
-#     match {
-#       status_code = ["200-399"]
-#     }
-#   }
-
-#   http_listener {
-#     name                           = "listener-http"
-#     frontend_ip_configuration_name = "appGwPublicFrontendIpIPv4"
-#     frontend_port_name             = "port_80"
-#     protocol                       = "Http"
-#     host_name                      = local.public_domain_name
-#     require_sni                    = false
-#   }
-
-#   http_listener {
-#     name                           = "listener-https"
-#     frontend_ip_configuration_name = "appGwPublicFrontendIpIPv4"
-#     frontend_port_name             = "port_443"
-#     protocol                       = "Https"
-#     host_name                      = local.public_domain_name
-#     ssl_certificate_name           = local.gateway_ssl_certificate_name
-#     require_sni                    = true
-#   }
-
-#   # Preserve request paths and query strings when redirecting HTTP to HTTPS.
-#   redirect_configuration {
-#     name                 = "redirect-http-to-https"
-#     redirect_type        = "Permanent"
-#     target_listener_name = "listener-https"
-#     include_path         = true
-#     include_query_string = true
-#   }
-
-#   request_routing_rule {
-#     name                        = "rule-http-to-https"
-#     rule_type                   = "Basic"
-#     priority                    = 1
-#     http_listener_name          = "listener-http"
-#     redirect_configuration_name = "redirect-http-to-https"
-#   }
-
-#   request_routing_rule {
-#     name                       = "rule-https-to-app"
-#     rule_type                  = "Basic"
-#     priority                   = 2
-#     http_listener_name         = "listener-https"
-#     backend_address_pool_name  = "pool-app-service"
-#     backend_http_settings_name = "bhs-app-service-https"
-#   }
-
-#   tags = local.tags
-# }
 
 
 ############################################################
@@ -1219,8 +997,8 @@ resource "azurerm_network_security_rule" "allow_deployment_agent_to_sql" {
   description                 = "Allows the deployment subnet to reach Azure SQL through private endpoints."
 }
 
-# Allows the future deployment VM to reach HTTPS-based private services:
-# Key Vault, Blob Storage, App Service, and the future App Service SCM endpoint.
+# Allows the deployment VM to reach HTTPS-based private services:
+# Key Vault, Blob Storage, App Service, and its SCM deployment endpoint.
 resource "azurerm_network_security_rule" "allow_deployment_agent_to_private_https" {
   name                        = "allow-deployment-agent-to-private-https"
   priority                    = 140
@@ -1354,7 +1132,7 @@ resource "azurerm_network_interface" "deployment_agent" {
   tags = local.tags
 }
 
-# Private Linux VM that will run the Azure DevOps self-hosted agent.
+# Private Linux VM that runs the deployment scripts.
 resource "azurerm_linux_virtual_machine" "deployment_agent" {
   name                = local.deployment_agent_vm_name
   resource_group_name = azurerm_resource_group.rg.name
@@ -1423,13 +1201,6 @@ resource "azurerm_role_assignment" "deployment_agent_key_vault_secrets_officer" 
   principal_id         = azurerm_linux_virtual_machine.deployment_agent.identity[0].principal_id
 }
 
-# Allows deployment scripts to import and renew TLS certificates in Key Vault.
-resource "azurerm_role_assignment" "deployment_agent_key_vault_certificates_officer" {
-  scope                = azurerm_key_vault.kv.id
-  role_definition_name = "Key Vault Certificates Officer"
-  principal_id         = azurerm_linux_virtual_machine.deployment_agent.identity[0].principal_id
-}
-
 # Allows deployment scripts to deploy and configure this specific web app.
 resource "azurerm_role_assignment" "deployment_agent_website_contributor" {
   scope                = azurerm_linux_web_app.app.id
@@ -1462,8 +1233,9 @@ output "storage_account" {
   value = azurerm_storage_account.storage.name
 }
 
-output "web_app_url" {
-  value = "https://${azurerm_linux_web_app.app.default_hostname}"
+output "web_app_default_hostname" {
+  description = "The App Service hostname. It is reachable only through the private endpoint."
+  value       = azurerm_linux_web_app.app.default_hostname
 }
 
 output "sql_server" {
@@ -1482,14 +1254,18 @@ output "key_vault_uri" {
   value = azurerm_key_vault.kv.vault_uri
 }
 
-output "key_vault_secrets" {
-  value = keys(local.secrets)
-}
-
 output "deployment_agent_private_ip" {
   value = azurerm_network_interface.deployment_agent.private_ip_address
 }
 
 output "deployment_agent_principal_id" {
   value = azurerm_linux_virtual_machine.deployment_agent.identity[0].principal_id
+}
+
+output "application_gateway_public_ip" {
+  value = azurerm_public_ip.app_gateway.ip_address
+}
+
+output "application_gateway_http_url" {
+  value = "http://${azurerm_public_ip.app_gateway.ip_address}"
 }
