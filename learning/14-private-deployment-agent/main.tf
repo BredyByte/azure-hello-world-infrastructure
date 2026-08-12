@@ -86,6 +86,8 @@ locals {
   deployment_agent_admin_username      = "azureuser"
   deployment_agent_ssh_public_key_path = "~/.ssh/ssh-azure-helloworld-deployment-agent.pub"
 
+  ddos_network_protection_plan = "ddos-network-dev-helloworld"
+
   tags = {
     Environment = "Development"
     Project     = "Hello World"
@@ -106,6 +108,19 @@ resource "azurerm_resource_group" "rg" {
 }
 
 ############################################################
+# Azure DDoS Network Protection
+############################################################
+
+# One plan protects supported public IPs in both project VNets.
+resource "azurerm_network_ddos_protection_plan" "project" {
+  name                = local.ddos_network_protection_plan
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+
+  tags = local.tags
+}
+
+############################################################
 # Virtual Network
 ############################################################
 
@@ -115,6 +130,11 @@ resource "azurerm_virtual_network" "vnet" {
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
   address_space       = local.virtual_network_address_space
+
+  ddos_protection_plan {
+    enable = true
+    id     = azurerm_network_ddos_protection_plan.project.id
+  }
 
   tags = local.tags
 }
@@ -696,6 +716,9 @@ resource "azurerm_public_ip" "app_gateway" {
   zones                   = ["1", "2", "3"]
   idle_timeout_in_minutes = 4
 
+  # DDoS protection is inherited from the application VNet protection plan.
+  ddos_protection_mode = "VirtualNetworkInherited"
+
   tags = local.tags
 }
 
@@ -861,6 +884,11 @@ resource "azurerm_virtual_network" "deployment" {
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
   address_space       = local.deployment_vnet_address_space
+
+  ddos_protection_plan {
+    enable = true
+    id     = azurerm_network_ddos_protection_plan.project.id
+  }
 
   tags = local.tags
 }
@@ -1047,6 +1075,9 @@ resource "azurerm_public_ip" "bastion" {
   allocation_method = "Static"
   sku               = "Standard"
   zones             = ["1", "2", "3"]
+
+  # DDoS protection is inherited from the deployment VNet protection plan.
+  ddos_protection_mode = "VirtualNetworkInherited"
 
   tags = local.tags
 }
