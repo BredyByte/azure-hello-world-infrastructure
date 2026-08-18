@@ -1,2 +1,0 @@
-# Copy this file to terraform.tfvars when environment values become variables.
-# Do not store secrets in tracked tfvars files.
