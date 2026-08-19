@@ -75,3 +75,16 @@ module "storage" {
 
   tags = local.common_tags
 }
+
+############################################################
+# Microsoft Entra identity
+############################################################
+
+module "identity" {
+  source = "./modules/identity"
+
+  sql_administrator_group_display_name = local.sql_administrators_group_name
+  sql_administrator_user_principal_name = (
+    var.sql_administrator_user_principal_name
+  )
+}

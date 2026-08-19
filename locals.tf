@@ -17,6 +17,8 @@ locals {
 
   ddos_network_protection_plan_name = "ddos-network-${local.name_prefix}"
 
+  sql_administrators_group_name = "grp-${local.name_prefix}-sql-administrators"
+
   ############################################################
   # Subnet names
   ############################################################

@@ -28,3 +28,9 @@ deployment_agent_subnet_prefixes   = ["10.30.1.0/24"]
 
 storage_account_tier             = "Standard"
 storage_account_replication_type = "LRS"
+
+############################################################
+# Microsoft Entra ID
+############################################################
+
+sql_administrator_user_principal_name = "bredykhindavyd_gmail.com#EXT#@bredykhindavydgmail.onmicrosoft.com"

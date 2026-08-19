@@ -88,3 +88,16 @@ output "storage" {
     containers            = module.storage.container_names
   }
 }
+
+############################################################
+# Microsoft Entra identity
+############################################################
+
+output "sql_administrators_group" {
+  description = "Microsoft Entra group that will administer Azure SQL."
+
+  value = {
+    display_name = module.identity.sql_administrator_group_display_name
+    object_id    = module.identity.sql_administrator_group_object_id
+  }
+}

@@ -113,3 +113,12 @@ variable "storage_account_replication_type" {
     error_message = "The replication type must be LRS, GRS, RAGRS, ZRS, GZRS or RAGZRS."
   }
 }
+
+############################################################
+# Microsoft Entra ID
+############################################################
+
+variable "sql_administrator_user_principal_name" {
+  description = "Microsoft Entra user principal name added to the SQL administrators group."
+  type        = string
+}
