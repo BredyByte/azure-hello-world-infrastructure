@@ -83,9 +83,24 @@ output "storage" {
   description = "Storage Account and private container configuration."
 
   value = {
-    name                  = module.storage.storage_account_name
-    primary_blob_endpoint = module.storage.primary_blob_endpoint
-    containers            = module.storage.container_names
+    name                  = module.data_services.storage_account_name
+    primary_blob_endpoint = module.data_services.storage_primary_blob_endpoint
+    containers            = module.data_services.storage_container_names
+  }
+}
+
+############################################################
+# Azure SQL and Key Vault
+############################################################
+
+output "data_services" {
+  description = "Azure SQL and Key Vault service details."
+
+  value = {
+    sql_server_name = module.data_services.sql_server_name
+    sql_database    = module.data_services.sql_database_name
+    key_vault_name  = module.data_services.key_vault_name
+    key_vault_uri   = module.data_services.key_vault_uri
   }
 }
 

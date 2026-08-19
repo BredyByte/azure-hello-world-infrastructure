@@ -13,6 +13,9 @@ crash.*.log
 terraform.tfvars.local
 terraform.tfvars.secrets
 
+terraform.tfvars
+.terraform/
+
 # Ignore JSON tfvars (often generated or contain secrets)
 *.tfvars.json
 

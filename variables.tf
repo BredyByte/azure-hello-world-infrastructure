@@ -100,6 +100,20 @@ variable "storage_account_tier" {
   }
 }
 
+############################################################
+# Azure SQL Database
+############################################################
+
+variable "sql_database_sku_name" {
+  description = "Azure SQL Database pricing SKU."
+  type        = string
+
+  validation {
+    condition     = contains(["Basic", "S0", "S1", "S2", "S3"], var.sql_database_sku_name)
+    error_message = "The SQL Database SKU must be Basic, S0, S1, S2 or S3."
+  }
+}
+
 variable "storage_account_replication_type" {
   description = "Replication type of the project Storage Account."
   type        = string

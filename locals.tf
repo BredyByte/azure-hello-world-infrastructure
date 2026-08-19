@@ -51,8 +51,12 @@ locals {
   }
 
   ############################################################
-  # Storage
+  # Data services
   ############################################################
+
+  sql_server_name   = "sql-${local.name_prefix}"
+  sql_database_name = "sqldb-${local.name_prefix}"
+  key_vault_name    = "kv-${local.name_prefix}"
 
   storage_account_name = "st${var.environment}${local.project_identifier}"
 

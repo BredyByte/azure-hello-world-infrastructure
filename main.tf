@@ -1,3 +1,7 @@
+# Reads tenant and subscription information from the Azure account
+# that runs Terraform.
+data "azurerm_client_config" "current" {}
+
 ############################################################
 # Shared foundation
 ############################################################
@@ -59,24 +63,6 @@ module "private_dns" {
 }
 
 ############################################################
-# Storage
-############################################################
-
-module "storage" {
-  source = "./modules/storage"
-
-  resource_group_name = azurerm_resource_group.rg.name
-  location            = azurerm_resource_group.rg.location
-
-  storage_account_name     = local.storage_account_name
-  account_tier             = var.storage_account_tier
-  account_replication_type = var.storage_account_replication_type
-  container_names          = local.storage_container_names
-
-  tags = local.common_tags
-}
-
-############################################################
 # Microsoft Entra identity
 ############################################################
 
@@ -87,4 +73,50 @@ module "identity" {
   sql_administrator_user_principal_name = (
     var.sql_administrator_user_principal_name
   )
+}
+
+############################################################
+# Data services
+############################################################
+
+module "data_services" {
+  source = "./modules/data_services"
+
+  resource_group_name = azurerm_resource_group.rg.name
+  location            = azurerm_resource_group.rg.location
+  tenant_id           = data.azurerm_client_config.current.tenant_id
+  tags                = local.common_tags
+
+  ##########################################################
+  # Storage
+  ##########################################################
+
+  storage_account_name     = local.storage_account_name
+  storage_account_tier     = var.storage_account_tier
+  storage_replication_type = var.storage_account_replication_type
+  storage_container_names  = local.storage_container_names
+
+  ##########################################################
+  # Azure SQL
+  ##########################################################
+
+  sql_server_name       = local.sql_server_name
+  sql_database_name     = local.sql_database_name
+  sql_database_sku_name = var.sql_database_sku_name
+
+  sql_administrator_group_display_name = (
+    module.identity.sql_administrator_group_display_name
+  )
+
+  sql_administrator_group_object_id = (
+    module.identity.sql_administrator_group_object_id
+  )
+
+  ##########################################################
+  # Azure Key Vault
+  ##########################################################
+
+  key_vault_name = local.key_vault_name
+
+  depends_on = [module.identity]
 }
