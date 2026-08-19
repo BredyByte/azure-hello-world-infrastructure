@@ -120,3 +120,30 @@ module "data_services" {
 
   depends_on = [module.identity]
 }
+
+############################################################
+# App Service
+############################################################
+
+module "app_service" {
+  source = "./modules/app_service"
+
+  resource_group_name = azurerm_resource_group.rg.name
+  location            = azurerm_resource_group.rg.location
+  tags                = local.common_tags
+
+  app_service_plan_name     = local.app_service_plan_name
+  app_service_plan_sku_name = var.app_service_plan_sku_name
+
+  web_app_name               = local.web_app_name
+  app_service_python_version = var.app_service_python_version
+
+  app_service_integration_subnet_id = (
+    module.networking.app_service_integration_subnet_id
+  )
+
+  key_vault_uri        = module.data_services.key_vault_uri
+  storage_account_name = module.data_services.storage_account_name
+  sql_server_fqdn      = module.data_services.sql_server_fqdn
+  sql_database_name    = module.data_services.sql_database_name
+}

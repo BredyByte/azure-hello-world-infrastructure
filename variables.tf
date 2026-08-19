@@ -136,3 +136,27 @@ variable "sql_administrator_user_principal_name" {
   description = "Microsoft Entra user principal name added to the SQL administrators group."
   type        = string
 }
+
+############################################################
+# App Service
+############################################################
+
+variable "app_service_plan_sku_name" {
+  description = "Pricing SKU for the Linux App Service Plan."
+  type        = string
+
+  validation {
+    condition     = contains(["B1", "B2", "B3", "S1", "S2", "S3"], var.app_service_plan_sku_name)
+    error_message = "The App Service Plan SKU must be B1, B2, B3, S1, S2 or S3."
+  }
+}
+
+variable "app_service_python_version" {
+  description = "Python runtime version used by the Linux Web App."
+  type        = string
+
+  validation {
+    condition     = contains(["3.10", "3.11", "3.12", "3.13"], var.app_service_python_version)
+    error_message = "The Python version must be 3.10, 3.11, 3.12 or 3.13."
+  }
+}

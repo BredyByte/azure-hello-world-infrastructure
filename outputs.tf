@@ -116,3 +116,18 @@ output "sql_administrators_group" {
     object_id    = module.identity.sql_administrator_group_object_id
   }
 }
+
+############################################################
+# App Service
+############################################################
+
+output "app_service" {
+  description = "Linux Web App details and managed identity IDs."
+
+  value = {
+    plan_name        = module.app_service.app_service_plan_name
+    web_app_name     = module.app_service.web_app_name
+    default_hostname = module.app_service.web_app_default_hostname
+    principal_id     = module.app_service.web_app_principal_id
+  }
+}

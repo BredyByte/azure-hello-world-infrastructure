@@ -65,5 +65,12 @@ locals {
     "data",
     "text",
   ])
+
+  ############################################################
+  # App Service
+  ############################################################
+
+  app_service_plan_name = "asp-${local.name_prefix}"
+  web_app_name          = "app-${local.name_prefix}"
 }
 
