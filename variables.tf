@@ -1,1 +1,87 @@
-# Environment inputs will be declared here as modules are introduced.
+############################################################
+# General deployment inputs
+############################################################
+
+variable "location" {
+  description = "Azure region where the project resources are deployed."
+  type        = string
+}
+
+variable "environment" {
+  description = "Short environment name used in resource names and tags."
+  type        = string
+
+  validation {
+    condition     = contains(["dev", "test", "prod"], var.environment)
+    error_message = "The environment must be one of: dev, test, prod."
+  }
+}
+
+variable "project_name" {
+  description = "Short project name used to build the permanent project identifier."
+  type        = string
+
+  validation {
+    condition     = can(regex("^[a-z0-9]+$", var.project_name))
+    error_message = "The project name must contain only lowercase letters and numbers."
+  }
+}
+
+variable "project_display_name" {
+  description = "Human-readable project name used in Azure tags."
+  type        = string
+}
+
+variable "resource_suffix" {
+  description = "Suffix appended directly to the project name to create its permanent identifier."
+  type        = string
+
+  validation {
+    condition     = can(regex("^[a-z0-9]+$", var.resource_suffix))
+    error_message = "The resource suffix must contain only lowercase letters and numbers."
+  }
+}
+
+variable "owner" {
+  description = "Owner recorded in the common Azure tags."
+  type        = string
+}
+
+############################################################
+# Networking inputs
+############################################################
+
+variable "application_vnet_address_space" {
+  description = "Address space assigned to the application virtual network."
+  type        = list(string)
+}
+
+variable "app_gateway_subnet_prefixes" {
+  description = "Address prefixes assigned to the Application Gateway subnet."
+  type        = list(string)
+}
+
+variable "app_service_subnet_prefixes" {
+  description = "Address prefixes assigned to the App Service integration subnet."
+  type        = list(string)
+}
+
+variable "private_endpoints_subnet_prefixes" {
+  description = "Address prefixes assigned to the private endpoints subnet."
+  type        = list(string)
+}
+
+variable "deployment_vnet_address_space" {
+  description = "Address space assigned to the deployment virtual network."
+  type        = list(string)
+}
+
+variable "deployment_bastion_subnet_prefixes" {
+  description = "Address prefixes assigned to AzureBastionSubnet."
+  type        = list(string)
+}
+
+variable "deployment_agent_subnet_prefixes" {
+  description = "Address prefixes assigned to the deployment agent subnet."
+  type        = list(string)
+}
