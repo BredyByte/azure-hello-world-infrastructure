@@ -74,3 +74,17 @@ output "private_dns_zones" {
   description = "Private DNS Zones configured for the project."
   value       = module.private_dns.private_dns_zone_names
 }
+
+############################################################
+# Storage
+############################################################
+
+output "storage" {
+  description = "Storage Account and private container configuration."
+
+  value = {
+    name                  = module.storage.storage_account_name
+    primary_blob_endpoint = module.storage.primary_blob_endpoint
+    containers            = module.storage.container_names
+  }
+}

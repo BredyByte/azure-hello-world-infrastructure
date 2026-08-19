@@ -57,3 +57,21 @@ module "private_dns" {
   application_vnet_id = module.networking.application_vnet_id
   deployment_vnet_id  = module.networking.deployment_vnet_id
 }
+
+############################################################
+# Storage
+############################################################
+
+module "storage" {
+  source = "./modules/storage"
+
+  resource_group_name = azurerm_resource_group.rg.name
+  location            = azurerm_resource_group.rg.location
+
+  storage_account_name     = local.storage_account_name
+  account_tier             = var.storage_account_tier
+  account_replication_type = var.storage_account_replication_type
+  container_names          = local.storage_container_names
+
+  tags = local.common_tags
+}

@@ -47,4 +47,17 @@ locals {
     Owner       = var.owner
     ManagedBy   = "Terraform"
   }
+
+  ############################################################
+  # Storage
+  ############################################################
+
+  storage_account_name = "st${var.environment}${local.project_identifier}"
+
+  storage_container_names = toset([
+    "images",
+    "data",
+    "text",
+  ])
 }
+

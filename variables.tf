@@ -85,3 +85,31 @@ variable "deployment_agent_subnet_prefixes" {
   description = "Address prefixes assigned to the deployment agent subnet."
   type        = list(string)
 }
+
+############################################################
+# Storage
+############################################################
+
+variable "storage_account_tier" {
+  description = "Performance tier of the project Storage Account."
+  type        = string
+
+  validation {
+    condition     = contains(["Standard", "Premium"], var.storage_account_tier)
+    error_message = "The Storage Account tier must be Standard or Premium."
+  }
+}
+
+variable "storage_account_replication_type" {
+  description = "Replication type of the project Storage Account."
+  type        = string
+
+  validation {
+    condition = contains(
+      ["LRS", "GRS", "RAGRS", "ZRS", "GZRS", "RAGZRS"],
+      var.storage_account_replication_type
+    )
+
+    error_message = "The replication type must be LRS, GRS, RAGRS, ZRS, GZRS or RAGZRS."
+  }
+}
