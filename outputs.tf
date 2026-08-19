@@ -65,3 +65,12 @@ output "deployment_network" {
     }
   }
 }
+
+############################################################
+# Private DNS Zones
+############################################################
+
+output "private_dns_zones" {
+  description = "Private DNS Zones configured for the project."
+  value       = module.private_dns.private_dns_zone_names
+}

@@ -4,7 +4,7 @@ locals {
   ############################################################
 
   project_identifier = "${var.project_name}${var.resource_suffix}"
-  name_prefix = "${var.environment}-${local.project_identifier}"
+  name_prefix        = "${var.environment}-${local.project_identifier}"
 
   ############################################################
   # Resource names

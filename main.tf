@@ -43,3 +43,17 @@ module "networking" {
   deployment_agent_subnet_name     = local.deployment_agent_subnet_name
   deployment_agent_subnet_prefixes = var.deployment_agent_subnet_prefixes
 }
+
+############################################################
+# Private DNS
+############################################################
+
+module "private_dns" {
+  source = "./modules/private_dns"
+
+  resource_group_name = azurerm_resource_group.rg.name
+  tags                = local.common_tags
+
+  application_vnet_id = module.networking.application_vnet_id
+  deployment_vnet_id  = module.networking.deployment_vnet_id
+}
