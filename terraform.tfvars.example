@@ -7,7 +7,7 @@ environment          = "dev"
 project_name         = "helloworld"
 project_display_name = "Hello World"
 resource_suffix      = "f800"
-owner                = "FILL IT"
+owner                = "John Smith"
 
 ############################################################
 # Networking configuration
@@ -35,7 +35,7 @@ sql_database_sku_name = "Basic"
 # Microsoft Entra ID
 ############################################################
 
-sql_administrator_user_principal_name = "Azure Portal -> Users -> your user -> User principal name"
+sql_administrator_user_principal_name = "<your-entra-user-principal-name>"
 
 ############################################################
 # App Service

@@ -1,212 +1,258 @@
-# Azure Infrastructure
+# Azure Hello World Infrastructure
 
-This repository contains the **Infrastructure as Code (IaC)** for my Azure learning journey and final DevOps / Cloud Engineer practical assessment.
+This repository contains the Terraform configuration used to provision the Azure infrastructure for the **Azure Hello World learning project**.
 
-The objective is to learn Azure by understanding every service individually, deploying it manually, and then recreating the same infrastructure using Terraform.
+The project was created to study Microsoft Azure, understand cloud architecture, and practise Infrastructure as Code with Terraform.
 
-The project follows **Microsoft Cloud Adoption Framework (CAF)** recommendations for resource organization, naming conventions, and tagging.
+Application code and data delivery are managed in the companion repository:
 
----
+[Azure Hello World Application](https://github.com/BredyByte/azure-hello-world-application)
 
-# Project Objective
 
-The following diagram represents the **target architecture** that will be built throughout this project.
+## Project Overview
 
-![Azure Architecture](docs/arch_diagram.jpg)
+The project implements a security-focused Azure architecture for a small Python web application.
 
-Rather than deploying everything at once, the architecture will be developed incrementally, with each Azure service studied, deployed manually, and finally automated using Terraform.
+The infrastructure includes private networking, managed identities, private service connectivity, a controlled deployment environment, perimeter protection, and centralized monitoring.
 
----
+![Azure architecture](docs/infrastrucutre-diagram.drawio.png)
 
-# Repository Structure
+The objective is not only to deploy the architecture, but to understand each Azure resource, its configuration, and its dependencies before automating it with Terraform.
 
-```text
-azure-infrastructure/
 
-│
-├── docs/
-│
-├── learning/
-│
-├── modules/
-│
-└── final-project/
-```
+## Project Goals
 
----
+- Study the purpose and capabilities of core Azure services.
+- Practise building modular infrastructure with Terraform.
+- Understand dependencies between networking, identity, services, and application delivery.
+- Compare manual Azure Portal deployments with automated Terraform deployments.
+- Apply consistent resource naming and tagging.
+- Implement private connectivity for Azure platform services.
+- Use managed identities and Azure RBAC instead of stored credentials.
+- Protect the public application entry point with Application Gateway and WAF.
+- Collect Application Gateway access and firewall logs in Log Analytics.
+- Build infrastructure that can be validated, destroyed, and recreated.
 
-## learning/
 
-Contains small Terraform exercises focused on **one Azure service at a time**.
+## Learning Methodology
 
-```text
-learning/
-
-├── 01-app-service/
-├── 02-storage/
-├── 03-sql/
-├── 04-keyvault/
-├── 05-managed-identity/
-└── ...
-```
-
-Each exercise contains:
-
-- Terraform configuration
-- README
-- Variables
-- Outputs
-- Personal notes
-
-The goal is to fully understand every Azure resource before moving to the next one.
-
----
-
-## modules/
-
-Reusable Terraform modules created from the learning exercises.
+Each infrastructure layer followed the same learning process:
 
 ```text
-modules/
-
-├── app-service/
-├── storage/
-├── sql/
-├── keyvault/
-├── networking/
-└── ...
+Study the Azure resource
+        ↓
+Understand its capabilities and configuration
+        ↓
+Identify dependencies with other resources
+        ↓
+Deploy it manually through Azure Portal
+        ↓
+Test and validate the manual deployment
+        ↓
+Implement it as a Terraform module
+        ↓
+Run Terraform plan and apply
+        ↓
+Test and validate the automated deployment
+        ↓
+Integrate it with the complete architecture
 ```
 
-Instead of copying Terraform code between projects, reusable modules will be created and later consumed by the final solution.
+This process made it possible to understand what Terraform was creating instead of treating the infrastructure as a single deployment template.
 
----
 
-## final-project/
+## Project Repositories
 
-Contains the complete infrastructure required by the practical assessment.
+The project is separated into two repositories with different responsibilities.
+
+### Infrastructure repository
+
+[azure-hello-world-infrastructure](https://github.com/BredyByte/azure-hello-world-infrastructure)
+
+Responsible for:
+
+- Provisioning Azure resources.
+- Configuring networking and private connectivity.
+- Creating managed identities and RBAC assignments.
+- Configuring Application Gateway and WAF.
+- Enabling centralized monitoring.
+
+### Application repository
+
+[azure-hello-world-application](https://github.com/BredyByte/azure-hello-world-application)
+
+Responsible for:
+
+- Deploying the Python application to Azure App Service.
+- Creating the Azure SQL schema and initial data.
+- Uploading application content to Blob Storage.
+- Adding application secrets to Azure Key Vault.
+- Validating the deployed application data.
+
+The application repository assumes that the Azure infrastructure has already been provisioned with Terraform.
+
+
+## Terraform Workflow
+
+### 1. Generate the SSH key pair
+
+The deployment VM uses SSH key authentication.
+
+Generate the key pair before running Terraform:
+
+```bash
+ssh-keygen \
+  -t ed25519 \
+  -f ~/.ssh/azure_hello_world_deployment
+```
+
+### 2. Create the Terraform variables file
+
+The repository contains a safe configuration template:
 
 ```text
-final-project/
-
-├── main.tf
-├── variables.tf
-├── outputs.tf
-├── terraform.tfvars
-└── README.md
+terraform.tfvars.example
 ```
 
-The project is assembled by combining the reusable Terraform modules developed during the learning phase.
+Copy it to create the local variables file:
 
----
+```bash
+cp terraform.tfvars.example terraform.tfvars
+```
 
-# Learning Methodology
+Complete environment-specific value:
 
-Every Azure service follows the same learning cycle.
+```hcl
+sql_administrator_user_principal_name = "<your-entra-user-principal-name>"
+```
+
+The real `terraform.tfvars` file is local and is not stored in Git.
+
+### 3. Initialize and validate Terraform
+
+```bash
+terraform init
+terraform fmt -recursive
+terraform validate
+```
+
+### 4. Review the infrastructure plan
+
+```bash
+terraform plan -out=tfplan
+```
+
+### 5. Provision the infrastructure
+
+```bash
+terraform apply tfplan
+```
+
+### 6. Review the Terraform outputs
+
+```bash
+terraform output
+```
+
+### 7. Destroy the learning environment
+
+Destroy the infrastructure when it is no longer required:
+
+```bash
+terraform destroy
+```
+
+
+## Application Deployment Workflow
+
+After Terraform provisions the infrastructure, application delivery is performed from the private deployment VM.
+
+The deployment VM has:
+
+- No public IP address.
+- Private access through Azure Bastion.
+- Outbound internet access through the NAT Gateway.
+- Private connectivity to the application services.
+- A system-assigned managed identity.
+- Azure RBAC permissions assigned by Terraform.
+
+The managed identity allows the deployment scripts to access Azure resources without storing Azure credentials in the repository.
+
+The following diagram illustrates the complete application deployment workflow:
+
+![Application deployment workflow](docs/application-deployment-workflow.png)
+
+
+### 1. Connect to the deployment VM
+
+Open Azure Portal and navigate to:
 
 ```text
-Study the Resource
-
-↓
-
-Deploy Manually
-
-↓
-
-Test & Validate
-
-↓
-
-Take Notes
-
-↓
-
-Delete Resources
-
-↓
-
-Recreate with Terraform
-
-↓
-
-Test & Validate
-
-↓
-
-Destroy
-
-↓
-
-Next Exercise
+Virtual Machines
+→ vm-deployment-agent-dev-helloworldf800
+→ Connect
+→ Bastion
 ```
 
-This methodology ensures that every Terraform resource is fully understood before being automated.
-
----
-
-# Repository Architecture
-
-## Application Repository
+Select SSH private key authentication and use:
 
 ```text
-GitHub
-
-https://github.com/BredyByte/azure-hello-world-app
-
-┌──────────────────────────────────────┐
-│ azure-hello-world-app                │
-│                                      │
-│ Python Flask Application             │
-│ GitHub Actions                       │
-│ CI/CD Pipeline                       │
-└──────────────────────────────────────┘
-                │
-                ▼
-        Azure App Service
+~/.ssh/azure_hello_world_deployment
 ```
 
-This repository contains only the application source code and its deployment pipeline.
+### 2. Clone the application repository
 
----
+Inside the deployment VM:
 
-## Infrastructure Repository
+```bash
+git clone \
+  https://github.com/BredyByte/azure-hello-world-application.git
+```
+
+### 3. Install Make
+
+```bash
+sudo apt update
+sudo apt install -y make
+```
+
+### 4. Deploy the application and data
+
+Run:
+
+```bash
+make deploy
+```
+
+### 5. Validate the deployed data
+
+Run all data validation checks:
+
+```bash
+make check
+```
+
+This validates:
+
+- The secret stored in Azure Key Vault.
+- The content uploaded to Blob Storage.
+- The schema and data created in Azure SQL Database.
+
+### 6. Access the application
+
+The App Service has public network access disabled. Application Gateway is the only public entry point to the application.
+
+To find its public IP address in Azure Portal, navigate to:
 
 ```text
-GitHub
-
-┌──────────────────────────────────────┐
-│ azure-infrastructure                 │
-│                                      │
-│ Terraform                            │
-│ Reusable Modules                     │
-│ Learning Exercises                   │
-│ Final Project                        │
-└──────────────────────────────────────┘
-                │
-                ▼
-        Azure Infrastructure
+Application Gateways
+→ agw-dev-helloworldf800
+→ Overview
+→ Frontend public IP address
 ```
 
-This repository contains only the Azure infrastructure managed with Terraform.
+The public IP address is also available in the Terraform outputs:
 
----
-
-# Technologies
-
-- Microsoft Azure
-- Terraform
-- Git
-- GitHub
-- GitHub Actions
-- Python
-- Flask
-
----
-
-# Project Goals
-
-- Learn Azure from first principles.
-- Follow Microsoft CAF best practices.
-- Master Infrastructure as Code using Terraform.
-- Build reusable Terraform modules.
-- Deploy applications through GitHub Actions.
-- Assemble a secure, production-like Azure architecture.
+```bash
+terraform output edge_gateway
+```
