@@ -198,3 +198,44 @@ module "private_connectivity" {
     )
   }
 }
+
+############################################################
+# Deployment platform
+############################################################
+
+module "deployment_platform" {
+  source = "./modules/deployment_platform"
+
+  name_prefix         = local.name_prefix
+  resource_group_name = azurerm_resource_group.rg.name
+  location            = azurerm_resource_group.rg.location
+  tags                = local.common_tags
+
+  ##########################################################
+  # Networking
+  ##########################################################
+
+  deployment_bastion_subnet_id = (
+    module.networking.deployment_bastion_subnet_id
+  )
+
+  deployment_agent_subnet_id = (
+    module.networking.deployment_agent_subnet_id
+  )
+
+  ##########################################################
+  # Deployment VM
+  ##########################################################
+
+  deployment_agent_vm_size = (
+    var.deployment_agent_vm_size
+  )
+
+  deployment_agent_admin_username = (
+    var.deployment_agent_admin_username
+  )
+
+  deployment_agent_ssh_public_key_path = (
+    var.deployment_agent_ssh_public_key_path
+  )
+}

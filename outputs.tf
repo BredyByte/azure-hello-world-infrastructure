@@ -140,3 +140,35 @@ output "private_connectivity" {
   description = "Private Endpoints configured for the project."
   value       = module.private_connectivity.private_endpoints
 }
+
+############################################################
+# Deployment platform
+############################################################
+
+output "deployment_platform" {
+  description = "Azure Bastion, NAT Gateway and deployment VM details."
+
+  value = {
+    bastion_public_ip = (
+      module.deployment_platform.bastion_public_ip_address
+    )
+
+    nat_gateway_public_ip = (
+      module.deployment_platform.nat_gateway_public_ip_address
+    )
+
+    deployment_agent = {
+      name = module.deployment_platform.deployment_agent_vm_name
+
+      private_ip = (
+        module.deployment_platform.deployment_agent_private_ip
+      )
+
+      admin_username = var.deployment_agent_admin_username
+
+      principal_id = (
+        module.deployment_platform.deployment_agent_principal_id
+      )
+    }
+  }
+}

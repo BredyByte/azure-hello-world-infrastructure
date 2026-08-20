@@ -160,3 +160,22 @@ variable "app_service_python_version" {
     error_message = "The Python version must be 3.10, 3.11, 3.12 or 3.13."
   }
 }
+
+############################################################
+# Deployment platform
+############################################################
+
+variable "deployment_agent_vm_size" {
+  description = "Azure size used by the deployment VM."
+  type        = string
+}
+
+variable "deployment_agent_admin_username" {
+  description = "Administrator username of the deployment VM."
+  type        = string
+}
+
+variable "deployment_agent_ssh_public_key_path" {
+  description = "Local path to the deployment VM SSH public key."
+  type        = string
+}
