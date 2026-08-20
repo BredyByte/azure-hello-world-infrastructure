@@ -172,3 +172,25 @@ output "deployment_platform" {
     }
   }
 }
+
+############################################################
+# Access control
+############################################################
+
+output "access_control" {
+  description = "Azure RBAC assignments and SQL group membership."
+
+  value = {
+    web_app_role_assignments = (
+      module.access_control.web_app_role_assignment_ids
+    )
+
+    deployment_agent_role_assignments = (
+      module.access_control.deployment_agent_role_assignment_ids
+    )
+
+    deployment_agent_sql_group_membership_id = (
+      module.access_control.deployment_agent_sql_group_membership_id
+    )
+  }
+}

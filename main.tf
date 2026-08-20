@@ -239,3 +239,47 @@ module "deployment_platform" {
     var.deployment_agent_ssh_public_key_path
   )
 }
+
+############################################################
+# Access control
+############################################################
+
+module "access_control" {
+  source = "./modules/access_control"
+
+  ##########################################################
+  # Managed identities
+  ##########################################################
+
+  web_app_principal_id = (
+    module.app_service.web_app_principal_id
+  )
+
+  deployment_agent_principal_id = (
+    module.deployment_platform.deployment_agent_principal_id
+  )
+
+  ##########################################################
+  # Azure resource scopes
+  ##########################################################
+
+  storage_account_id = (
+    module.data_services.storage_account_id
+  )
+
+  key_vault_id = (
+    module.data_services.key_vault_id
+  )
+
+  web_app_id = (
+    module.app_service.web_app_id
+  )
+
+  ##########################################################
+  # Microsoft Entra SQL group
+  ##########################################################
+
+  sql_administrator_group_object_id = (
+    module.identity.sql_administrator_group_object_id
+  )
+}
