@@ -142,6 +142,28 @@ output "private_connectivity" {
 }
 
 ############################################################
+# Edge Gateway
+############################################################
+
+output "edge_gateway" {
+  description = "Application Gateway and WAF details."
+
+  value = {
+    application_gateway_name = (
+      module.edge_gateway.application_gateway_name
+    )
+
+    public_ip_address = (
+      module.edge_gateway.application_gateway_public_ip_address
+    )
+
+    waf_policy_name = (
+      module.edge_gateway.waf_policy_name
+    )
+  }
+}
+
+############################################################
 # Deployment platform
 ############################################################
 

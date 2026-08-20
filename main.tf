@@ -200,6 +200,42 @@ module "private_connectivity" {
 }
 
 ############################################################
+# Edge Gateway
+############################################################
+
+module "edge_gateway" {
+  source = "./modules/edge_gateway"
+
+  name_prefix         = local.name_prefix
+  resource_group_name = azurerm_resource_group.rg.name
+  location            = azurerm_resource_group.rg.location
+  tags                = local.common_tags
+
+  ##########################################################
+  # Networking
+  ##########################################################
+
+  app_gateway_subnet_id = (
+    module.networking.app_gateway_subnet_id
+  )
+
+  ##########################################################
+  # App Service backend
+  ##########################################################
+
+  web_app_default_hostname = (
+    module.app_service.web_app_default_hostname
+  )
+
+  # Networking must finish its NSG rules and the App Service
+  # Private Endpoint and Private DNS must already exist.
+  depends_on = [
+    module.networking,
+    module.private_connectivity,
+  ]
+}
+
+############################################################
 # Deployment platform
 ############################################################
 
