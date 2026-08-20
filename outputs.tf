@@ -216,3 +216,21 @@ output "access_control" {
     )
   }
 }
+
+############################################################
+# Monitoring
+############################################################
+
+output "monitoring" {
+  description = "Log Analytics and diagnostic settings details."
+
+  value = {
+    log_analytics_workspace_name = (
+      module.monitoring.log_analytics_workspace_name
+    )
+
+    application_gateway_diagnostic_setting_name = (
+      module.monitoring.application_gateway_diagnostic_setting_name
+    )
+  }
+}

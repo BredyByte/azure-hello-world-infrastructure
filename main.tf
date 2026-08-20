@@ -319,3 +319,32 @@ module "access_control" {
     module.identity.sql_administrator_group_object_id
   )
 }
+
+############################################################
+# Monitoring
+############################################################
+
+module "monitoring" {
+  source = "./modules/monitoring"
+
+  name_prefix         = local.name_prefix
+  resource_group_name = azurerm_resource_group.rg.name
+  location            = azurerm_resource_group.rg.location
+  tags                = local.common_tags
+
+  ##########################################################
+  # Log Analytics
+  ##########################################################
+
+  log_analytics_retention_in_days = (
+    var.log_analytics_retention_in_days
+  )
+
+  ##########################################################
+  # Application Gateway
+  ##########################################################
+
+  application_gateway_id = (
+    module.edge_gateway.application_gateway_id
+  )
+}

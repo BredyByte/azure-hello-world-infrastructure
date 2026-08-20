@@ -179,3 +179,12 @@ variable "deployment_agent_ssh_public_key_path" {
   description = "Local path to the deployment VM SSH public key."
   type        = string
 }
+
+############################################################
+# Monitoring
+############################################################
+
+variable "log_analytics_retention_in_days" {
+  description = "Number of days that monitoring logs are retained."
+  type        = number
+}
