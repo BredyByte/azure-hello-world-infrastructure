@@ -131,3 +131,12 @@ output "app_service" {
     principal_id     = module.app_service.web_app_principal_id
   }
 }
+
+############################################################
+# Private connectivity
+############################################################
+
+output "private_connectivity" {
+  description = "Private Endpoints configured for the project."
+  value       = module.private_connectivity.private_endpoints
+}

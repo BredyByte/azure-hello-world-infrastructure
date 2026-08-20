@@ -147,3 +147,54 @@ module "app_service" {
   sql_server_fqdn      = module.data_services.sql_server_fqdn
   sql_database_name    = module.data_services.sql_database_name
 }
+
+############################################################
+# Private connectivity
+############################################################
+
+module "private_connectivity" {
+  source = "./modules/private_connectivity"
+
+  resource_group_name = azurerm_resource_group.rg.name
+  location            = azurerm_resource_group.rg.location
+  tags                = local.common_tags
+
+  ##########################################################
+  # Networking
+  ##########################################################
+
+  private_endpoints_subnet_id = (
+    module.networking.private_endpoints_subnet_id
+  )
+
+  name_prefix = local.name_prefix
+
+  ##########################################################
+  # Private Link service resources
+  ##########################################################
+
+  sql_server_id      = module.data_services.sql_server_id
+  key_vault_id       = module.data_services.key_vault_id
+  storage_account_id = module.data_services.storage_account_id
+  web_app_id         = module.app_service.web_app_id
+
+  ##########################################################
+  # Private DNS Zones
+  ##########################################################
+
+  private_dns_zone_ids = {
+    sql = module.private_dns.private_dns_zone_ids.sql
+
+    key_vault = (
+      module.private_dns.private_dns_zone_ids.key_vault
+    )
+
+    storage_blob = (
+      module.private_dns.private_dns_zone_ids.storage
+    )
+
+    app_service = (
+      module.private_dns.private_dns_zone_ids.app_service
+    )
+  }
+}
