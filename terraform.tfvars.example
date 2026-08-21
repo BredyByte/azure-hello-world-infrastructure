@@ -13,6 +13,14 @@ owner                = "John Smith"
 # Networking configuration
 ############################################################
 
+# Creates the paid Azure DDoS Network Protection plan and
+# associates it with both project VNets.
+#
+# Recommended values:
+#   development/test = false
+#   production       = true
+enable_ddos_network_protection = false
+
 application_vnet_address_space    = ["10.20.0.0/16"]
 app_gateway_subnet_prefixes       = ["10.20.0.0/24"]
 app_service_subnet_prefixes       = ["10.20.1.0/26"]

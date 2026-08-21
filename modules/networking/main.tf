@@ -3,6 +3,9 @@
 ############################################################
 
 resource "azurerm_network_ddos_protection_plan" "project" {
+  # Creates one plan when enabled and no plan when disabled.
+  count = var.enable_ddos_network_protection ? 1 : 0
+
   name                = var.ddos_network_protection_plan_name
   location            = var.location
   resource_group_name = var.resource_group_name
@@ -10,9 +13,17 @@ resource "azurerm_network_ddos_protection_plan" "project" {
   tags = var.tags
 }
 
+# Preserves the existing Terraform resource address after
+# adding count to the DDoS protection plan.
+moved {
+  from = azurerm_network_ddos_protection_plan.project
+  to   = azurerm_network_ddos_protection_plan.project[0]
+}
+
 ############################################################
 # Application virtual network
 ############################################################
+
 
 resource "azurerm_virtual_network" "application" {
   name                = var.application_vnet_name
@@ -20,9 +31,17 @@ resource "azurerm_virtual_network" "application" {
   resource_group_name = var.resource_group_name
   address_space       = var.application_vnet_address_space
 
-  ddos_protection_plan {
-    enable = true
-    id     = azurerm_network_ddos_protection_plan.project.id
+  # Adds the DDoS plan block only when the paid protection
+  # has been explicitly enabled.
+  dynamic "ddos_protection_plan" {
+    for_each = var.enable_ddos_network_protection ? [1] : []
+
+    content {
+      enable = true
+      id = (
+        azurerm_network_ddos_protection_plan.project[0].id
+      )
+    }
   }
 
   tags = var.tags
@@ -74,9 +93,17 @@ resource "azurerm_virtual_network" "deployment" {
   resource_group_name = var.resource_group_name
   address_space       = var.deployment_vnet_address_space
 
-  ddos_protection_plan {
-    enable = true
-    id     = azurerm_network_ddos_protection_plan.project.id
+  # Adds the DDoS plan block only when the paid protection
+  # has been explicitly enabled.
+  dynamic "ddos_protection_plan" {
+    for_each = var.enable_ddos_network_protection ? [1] : []
+
+    content {
+      enable = true
+      id = (
+        azurerm_network_ddos_protection_plan.project[0].id
+      )
+    }
   }
 
   tags = var.tags

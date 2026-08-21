@@ -27,5 +27,11 @@ output "deployment_bastion_subnet_id" {
 }
 
 output "ddos_protection_plan_id" {
-  value = azurerm_network_ddos_protection_plan.project.id
+  description = "DDoS Network Protection plan ID, or null when protection is disabled."
+
+  value = (
+    var.enable_ddos_network_protection
+    ? azurerm_network_ddos_protection_plan.project[0].id
+    : null
+  )
 }

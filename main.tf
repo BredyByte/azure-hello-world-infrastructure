@@ -24,7 +24,17 @@ module "networking" {
   location            = azurerm_resource_group.rg.location
   tags                = local.common_tags
 
+  ##########################################################
+  # Azure DDoS Network Protection
+  ##########################################################
+
+  enable_ddos_network_protection = var.enable_ddos_network_protection
+
   ddos_network_protection_plan_name = local.ddos_network_protection_plan_name
+
+  ##########################################################
+  # Application network
+  ##########################################################
 
   application_vnet_name          = local.application_vnet_name
   application_vnet_address_space = var.application_vnet_address_space
@@ -35,17 +45,36 @@ module "networking" {
   app_service_subnet_name     = local.app_service_subnet_name
   app_service_subnet_prefixes = var.app_service_subnet_prefixes
 
-  private_endpoints_subnet_name     = local.private_endpoints_subnet_name
-  private_endpoints_subnet_prefixes = var.private_endpoints_subnet_prefixes
+  private_endpoints_subnet_name = (
+    local.private_endpoints_subnet_name
+  )
+
+  private_endpoints_subnet_prefixes = (
+    var.private_endpoints_subnet_prefixes
+  )
+
+  ##########################################################
+  # Deployment network
+  ##########################################################
 
   deployment_vnet_name          = local.deployment_vnet_name
   deployment_vnet_address_space = var.deployment_vnet_address_space
 
-  deployment_bastion_subnet_name     = local.deployment_bastion_subnet_name
-  deployment_bastion_subnet_prefixes = var.deployment_bastion_subnet_prefixes
+  deployment_bastion_subnet_name = (
+    local.deployment_bastion_subnet_name
+  )
 
-  deployment_agent_subnet_name     = local.deployment_agent_subnet_name
-  deployment_agent_subnet_prefixes = var.deployment_agent_subnet_prefixes
+  deployment_bastion_subnet_prefixes = (
+    var.deployment_bastion_subnet_prefixes
+  )
+
+  deployment_agent_subnet_name = (
+    local.deployment_agent_subnet_name
+  )
+
+  deployment_agent_subnet_prefixes = (
+    var.deployment_agent_subnet_prefixes
+  )
 }
 
 ############################################################

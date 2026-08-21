@@ -87,6 +87,15 @@ variable "deployment_agent_subnet_prefixes" {
 }
 
 ############################################################
+# Azure DDoS Network Protection
+############################################################
+
+variable "enable_ddos_network_protection" {
+  description = "Controls the paid Azure DDoS Network Protection plan and its association with both project VNets."
+  type        = bool
+}
+
+############################################################
 # Storage
 ############################################################
 

@@ -69,3 +69,8 @@ variable "deployment_agent_subnet_name" {
 variable "deployment_agent_subnet_prefixes" {
   type = list(string)
 }
+
+variable "enable_ddos_network_protection" {
+  description = "Whether the paid Azure DDoS Network Protection plan is created and associated with the VNets."
+  type        = bool
+}

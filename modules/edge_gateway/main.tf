@@ -22,8 +22,9 @@ resource "azurerm_public_ip" "application_gateway" {
   zones                   = ["1", "2", "3"]
   idle_timeout_in_minutes = 4
 
-  # Protection is inherited from the DDoS plan assigned
-  # to the Application VNet.
+  # Inherits the paid DDoS Network Protection plan when it is
+  # enabled on the Application VNet. Otherwise, the default
+  # Azure infrastructure-level protection remains available.
   ddos_protection_mode = "VirtualNetworkInherited"
 
   tags = var.tags

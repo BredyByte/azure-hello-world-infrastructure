@@ -26,7 +26,9 @@ resource "azurerm_public_ip" "bastion" {
   sku               = "Standard"
   zones             = ["1", "2", "3"]
 
-  # The protection comes from the DDoS plan assigned to the VNet.
+  # Inherits the paid DDoS Network Protection plan when it is
+  # enabled on the Deployment VNet. Otherwise, the default
+  # Azure infrastructure-level protection remains available.
   ddos_protection_mode = "VirtualNetworkInherited"
 
   tags = var.tags
