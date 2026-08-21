@@ -67,7 +67,7 @@ resource "azuread_directory_role" "directory_readers" {
 }
 
 resource "azuread_directory_role_assignment" "sql_server_directory_readers" {
-  role_id             = azuread_directory_role.directory_readers.object_id
+  role_id             = azuread_directory_role.directory_readers.template_id
   principal_object_id = azurerm_mssql_server.this.identity[0].principal_id
 }
 
